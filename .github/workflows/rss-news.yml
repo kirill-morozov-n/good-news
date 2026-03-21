@@ -1,0 +1,37 @@
+name: RSS News Bot
+
+on:
+  schedule:
+    # Every 10 minutes, 05:00-19:00 UTC (08:00-22:00 MSK = quiet hours respected)
+    - cron: '*/10 5-19 * * *'
+  workflow_dispatch: # manual trigger
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Restore posted articles cache
+        uses: actions/cache@v4
+        with:
+          path: python/output/rss_posted.json
+          key: rss-posted-${{ github.run_id }}
+          restore-keys: rss-posted-
+
+      - name: Post one news item
+        working-directory: python
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: python main.py news-once

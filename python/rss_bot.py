@@ -226,6 +226,19 @@ def _quiet_sleep_seconds() -> float | None:
     return (resume - now).total_seconds()
 
 
+async def post_once() -> bool:
+    """Post a single news item and exit. For use with GitHub Actions cron."""
+    posted_urls = load_posted_urls()
+    posted_titles = load_posted_titles()
+    recent_tags: list = []
+    ok = await _post_one(posted_urls, posted_titles, recent_tags)
+    if ok:
+        logger.info("news-once: posted successfully.")
+    else:
+        logger.warning("news-once: no article posted.")
+    return ok
+
+
 async def run_news_bot() -> None:
     """Infinite loop: post one news item every 5 minutes (paused during quiet hours)."""
     logger.info("RSS News Bot started. Posting every %d minutes.", POST_INTERVAL // 60)

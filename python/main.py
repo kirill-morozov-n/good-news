@@ -50,6 +50,13 @@ def cmd_news():
         print("\nNews bot stopped.")
 
 
+def cmd_news_once():
+    from rss_bot import post_once
+
+    ok = asyncio.run(post_once())
+    print("Posted." if ok else "Nothing to post.")
+
+
 def cmd_start():
     from rss_bot import run_news_bot
     from scheduler import run_scheduler
@@ -81,6 +88,7 @@ COMMANDS = {
     "schedule": cmd_schedule,
     "login": cmd_login,
     "news": cmd_news,
+    "news-once": cmd_news_once,
     "start": cmd_start,
 }
 
