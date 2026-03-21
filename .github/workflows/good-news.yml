@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # manual trigger from GitHub UI
 
 jobs:
-  run:
+  research:
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
