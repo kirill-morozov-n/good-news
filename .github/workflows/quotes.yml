@@ -1,0 +1,37 @@
+name: Daily Quotes
+
+on:
+  schedule:
+    # 04:00 UTC (07:00 MSK) and 17:00 UTC (20:00 MSK)
+    - cron: '0 4 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch: # manual trigger
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Restore quotes cache
+        uses: actions/cache@v4
+        with:
+          path: python/output/quotes_posted.json
+          key: quotes-posted-${{ github.run_id }}
+          restore-keys: quotes-posted-
+
+      - name: Post quote
+        working-directory: python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: python main.py quote
