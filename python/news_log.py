@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 LOG_FILE = Path(config.OUTPUT_DIR) / "news_log.json"
 # How many past days to include in the "avoid repeating" context
-LOOKBACK_DAYS = 3
+LOOKBACK_DAYS = 5
 
 
 def load_entries() -> list[dict]:
@@ -43,6 +43,39 @@ def save_entry(notebook_id: str, summary: str, source_titles: list[str]) -> None
         logger.warning("Could not write news log: %s", exc)
 
 
+def _extract_proper_phrases(title: str) -> list[str]:
+    """Extract multi-word proper nouns from a title (e.g. 'Open Claw', 'Meta Quest')."""
+    import re
+    # Clean separators
+    title = title.replace("—", " ").replace("–", " ").replace(":", " ").replace("|", " ")
+    words = title.split()
+    phrases = []
+    current = []
+    for word in words:
+        clean = re.sub(r"[^\w]", "", word)
+        if not clean:
+            if current:
+                phrases.append(" ".join(current))
+                current = []
+            continue
+        # Capitalized word (not a short filler like "The", "And", "For")
+        is_proper = (
+            len(clean) >= 2
+            and clean[0].isupper()
+            and clean not in {"The", "And", "For", "With", "From", "That", "This", "Its", "Are", "Has", "Was", "New"}
+        )
+        if is_proper:
+            current.append(clean)
+        else:
+            if current:
+                phrases.append(" ".join(current))
+                current = []
+    if current:
+        phrases.append(" ".join(current))
+    # Keep phrases with 2+ words, or single words 4+ chars
+    return [p for p in phrases if len(p.split()) >= 2 or len(p) >= 4]
+
+
 def build_avoid_section() -> str:
     """Return a text block listing previously covered topics for injection into the prompt."""
     entries = load_entries()
@@ -63,28 +96,30 @@ def build_avoid_section() -> str:
     if not recent:
         return ""
 
-    # Collect unique key terms from titles for explicit exclusion
+    # Collect product/project names as multi-word phrases from titles
     seen_terms = set()
     for e in recent:
         for title in e.get("source_titles", []):
-            # Extract capitalized proper nouns / product names (2+ chars)
-            for word in title.replace("—", " ").replace("–", " ").split():
-                clean = word.strip(".,;:!?()[]\"'")
-                if len(clean) >= 3 and clean[0].isupper() and not clean.isupper():
-                    seen_terms.add(clean)
+            # Extract consecutive capitalized words as phrases (e.g. "Open Claw")
+            phrases = _extract_proper_phrases(title)
+            seen_terms.update(phrases)
 
-    lines = ["\n\nIMPORTANT — Do NOT repeat these topics/products/companies already covered in recent sessions:"]
+    lines = [
+        "\n\nCRITICAL REQUIREMENT — The following topics, products, and projects were ALREADY covered. "
+        "You MUST NOT mention them again, even briefly. Find DIFFERENT news instead:",
+    ]
     if seen_terms:
-        lines.append("Key terms to SKIP: " + ", ".join(sorted(seen_terms)[:50]))
+        lines.append("BANNED terms (do NOT mention): " + ", ".join(sorted(seen_terms)[:80]))
 
+    lines.append("\nPreviously covered sessions:")
     for e in reversed(recent):  # chronological order
         titles = e.get("source_titles", [])
         summary = e.get("summary", "").strip()
         lines.append(f"\n[{e['date']}]")
         if summary:
-            lines.append(f"  Summary: {summary[:150]}{'...' if len(summary) > 150 else ''}")
+            lines.append(f"  Summary: {summary[:200]}{'...' if len(summary) > 200 else ''}")
         if titles:
-            lines.append("  Topics: " + "; ".join(titles[:10]))
+            lines.append("  Topics: " + "; ".join(titles[:15]))
 
     return "\n".join(lines)
 
