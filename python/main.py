@@ -64,6 +64,13 @@ def cmd_quote():
     print("Quote posted." if ok else "Failed to post quote.")
 
 
+def cmd_meditation():
+    from meditation import post_meditation
+
+    ok = asyncio.run(post_meditation())
+    print("Meditation posted." if ok else "Failed to post meditation.")
+
+
 def cmd_start():
     from rss_bot import run_news_bot
     from scheduler import run_scheduler
@@ -97,6 +104,7 @@ COMMANDS = {
     "news": cmd_news,
     "news-once": cmd_news_once,
     "quote": cmd_quote,
+    "meditation": cmd_meditation,
     "start": cmd_start,
 }
 

@@ -47,6 +47,10 @@ VIDEO_LANGUAGE = "ru"
 # --- OpenAI Settings ---
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "REDACTED_OPENAI_KEY")
 
+# --- Meditation Settings ---
+MEDITATION_TTS_VOICE = "ru-RU-SvetlanaNeural"
+MEDITATION_TTS_RATE = "-10%"  # slightly slower pace for meditation
+
 # --- Telegram Settings ---
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "REDACTED_TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL_ID = os.environ.get("TELEGRAM_CHANNEL_ID", "-1002979580175")

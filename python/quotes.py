@@ -1,6 +1,6 @@
 """
 Daily quotes from yoga, tantra, and Buddhism.
-Posts a random quote to the Telegram channel, avoiding recent repeats.
+Posts a random quote (translated to Russian) to the Telegram channel, avoiding recent repeats.
 Quotes sourced from Quotes-500K dataset (Goodreads).
 """
 
@@ -10,6 +10,7 @@ import random
 from pathlib import Path
 
 import httpx
+from openai import AsyncOpenAI
 
 import config
 
@@ -57,10 +58,35 @@ def _pick_quote() -> dict:
     return quotes[idx]
 
 
-def _format_quote(q: dict) -> str:
+async def _translate_quote(text: str) -> str:
+    """Translate a quote to Russian using OpenAI."""
+    if not config.OPENAI_API_KEY:
+        return text
+    try:
+        client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
+        resp = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": (
+                    "Переведи цитату на красивый, естественный русский язык. "
+                    "Сохрани глубину и поэтичность оригинала. "
+                    "Выведи только перевод, без пояснений и кавычек."
+                )},
+                {"role": "user", "content": text},
+            ],
+            max_tokens=200,
+            temperature=0.3,
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error("Quote translation failed: %s", e)
+        return text
+
+
+def _format_quote(text: str, author: str) -> str:
     return (
-        f"🪷 <i>«{q['text']}»</i>\n\n"
-        f"— <b>{q['author']}</b>\n\n"
+        f"🪷 <i>«{text}»</i>\n\n"
+        f"— <b>{author}</b>\n\n"
         f"#мудрость #цитата"
     )
 
@@ -72,7 +98,8 @@ async def post_quote() -> bool:
         return False
 
     quote = _pick_quote()
-    text = _format_quote(quote)
+    translated = await _translate_quote(quote["text"])
+    text = _format_quote(translated, quote["author"])
 
     url = TG_API.format(token=config.TELEGRAM_BOT_TOKEN, method="sendMessage")
     try:

@@ -1,0 +1,36 @@
+name: Evening Meditation
+
+on:
+  schedule:
+    # 18:30 UTC = 21:30 MSK — last post before quiet hours
+    - cron: '30 18 * * *'
+  workflow_dispatch: # manual trigger
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Restore meditation cache
+        uses: actions/cache@v4
+        with:
+          path: python/output/meditation_posted.json
+          key: meditation-posted-${{ github.run_id }}
+          restore-keys: meditation-posted-
+
+      - name: Post evening meditation
+        working-directory: python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: python main.py meditation
