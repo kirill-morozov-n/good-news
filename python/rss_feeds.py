@@ -35,6 +35,48 @@ RSS_FEEDS = [
     # Open Source / GitHub
     {"url": "https://github.blog/feed/", "hashtags": "#GitHub #OpenSource"},
     {"url": "https://opensource.com/feed", "hashtags": "#OpenSource #разработка"},
+    {"url": "https://ossinsight.io/blog/rss.xml", "hashtags": "#GitHub #OpenSource #тренды"},
+
+    # AI-инструменты / практика
+    {"url": "https://www.futuretools.io/rss", "hashtags": "#AI #инструменты #лайфхак"},
+    {"url": "https://www.therundown.ai/rss", "hashtags": "#AI #инструменты #лайфхак"},
+    {"url": "https://bensbites.beehiiv.com/feed", "hashtags": "#AI #инструменты"},
+
+    # Hugging Face / ML-сообщество
+    {"url": "https://huggingface.co/papers/rss", "hashtags": "#AI #HuggingFace #OpenSource"},
+
+    # Product Hunt / новые продукты
+    {"url": "https://www.producthunt.com/feed", "hashtags": "#продукты #стартапы #инструменты"},
+
+    # Разработка / DevTools
+    {"url": "https://news.ycombinator.com/rss", "hashtags": "#разработка #HackerNews #лайфхак"},
+    {"url": "https://dev.to/feed", "hashtags": "#разработка #DevTools #туториалы"},
+    {"url": "https://css-tricks.com/feed/", "hashtags": "#фронтенд #разработка"},
+    {"url": "https://changelog.com/feed", "hashtags": "#разработка #OpenSource #DevTools"},
+
+    # Дизайн / инструменты для дизайнеров
+    {"url": "https://www.smashingmagazine.com/feed/", "hashtags": "#дизайн #UX #разработка"},
+    {"url": "https://blog.figma.com/feed", "hashtags": "#дизайн #Figma #инструменты"},
+    {"url": "https://www.itsnicethat.com/rss", "hashtags": "#дизайн #креатив #вдохновение"},
+
+    # Фотография
+    {"url": "https://petapixel.com/feed/", "hashtags": "#фото #камеры #лайфхак"},
+    {"url": "https://fstoppers.com/rss.xml", "hashtags": "#фото #ретушь #инструменты"},
+
+    # DIY / Maker / гаджеты для всех
+    {"url": "https://hackaday.com/feed/", "hashtags": "#DIY #maker #гаджеты"},
+    {"url": "https://makezine.com/feed/", "hashtags": "#DIY #maker #конструкторы"},
+    {"url": "https://www.instructables.com/tag/type-id/category-technology/rss.xml", "hashtags": "#DIY #лайфхак #инструкции"},
+
+    # Приватность / свобода интернета / VPN
+    {"url": "https://www.eff.org/rss/updates.xml", "hashtags": "#приватность #свобода #интернет"},
+    {"url": "https://torrentfreak.com/feed/", "hashtags": "#приватность #VPN #свобода"},
+    {"url": "https://www.privacyguides.org/en/blog/feed_rss_created.xml", "hashtags": "#приватность #VPN #безопасность"},
+    {"url": "https://protonvpn.com/blog/feed/", "hashtags": "#VPN #приватность #обходБлокировок"},
+    {"url": "https://mullvad.net/blog/feed/rss/", "hashtags": "#VPN #приватность"},
+
+    # Indie-разработка
+    {"url": "https://www.indiehackers.com/feed.xml", "hashtags": "#инди #стартапы #разработка"},
 
     # Games
     {"url": "https://kotaku.com/rss", "hashtags": "#игры #геймдев"},
