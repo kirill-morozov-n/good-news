@@ -53,6 +53,21 @@ RSS_FEEDS = [
     {"url": "https://dev.to/feed", "hashtags": "#разработка #DevTools #туториалы"},
     {"url": "https://css-tricks.com/feed/", "hashtags": "#фронтенд #разработка"},
     {"url": "https://changelog.com/feed", "hashtags": "#разработка #OpenSource #DevTools"},
+    {"url": "https://blog.codinghorror.com/rss/", "hashtags": "#разработка #туториалы #практика"},
+    {"url": "https://martinfowler.com/feed.atom", "hashtags": "#архитектура #разработка #паттерны"},
+    {"url": "https://overreacted.io/rss.xml", "hashtags": "#React #фронтенд #туториалы"},
+    {"url": "https://jvns.ca/atom.xml", "hashtags": "#Linux #разработка #туториалы"},
+    {"url": "https://www.freecodecamp.org/news/rss/", "hashtags": "#разработка #туториалы #бесплатно"},
+
+    # Информационная безопасность / туториалы
+    {"url": "https://krebsonsecurity.com/feed/", "hashtags": "#ИБ #расследования #безопасность"},
+    {"url": "https://www.bleepingcomputer.com/feed/", "hashtags": "#ИБ #уязвимости #малварь"},
+    {"url": "https://thehackernews.com/feeds/posts/default", "hashtags": "#ИБ #уязвимости #новости"},
+    {"url": "https://portswigger.net/research/rss", "hashtags": "#ИБ #вебБезопасность #туториалы"},
+    {"url": "https://blog.trailofbits.com/feed/", "hashtags": "#ИБ #аудит #криптография"},
+    {"url": "https://googleprojectzero.blogspot.com/feeds/posts/default", "hashtags": "#ИБ #0day #эксплойты"},
+    {"url": "https://securelist.com/feed/", "hashtags": "#ИБ #APT #малварь"},
+    {"url": "https://www.hackthebox.com/blog/rss.xml", "hashtags": "#ИБ #CTF #пентест"},
 
     # Дизайн / инструменты для дизайнеров
     {"url": "https://www.smashingmagazine.com/feed/", "hashtags": "#дизайн #UX #разработка"},
@@ -63,17 +78,32 @@ RSS_FEEDS = [
     {"url": "https://petapixel.com/feed/", "hashtags": "#фото #камеры #лайфхак"},
     {"url": "https://fstoppers.com/rss.xml", "hashtags": "#фото #ретушь #инструменты"},
 
-    # DIY / Maker / гаджеты для всех
+    # DIY / Maker / гаджеты для всех / хардвар
     {"url": "https://hackaday.com/feed/", "hashtags": "#DIY #maker #гаджеты"},
     {"url": "https://makezine.com/feed/", "hashtags": "#DIY #maker #конструкторы"},
     {"url": "https://www.instructables.com/tag/type-id/category-technology/rss.xml", "hashtags": "#DIY #лайфхак #инструкции"},
+    {"url": "https://blog.adafruit.com/feed/", "hashtags": "#DIY #электроника #Arduino"},
+    {"url": "https://www.sparkfun.com/news/feed", "hashtags": "#DIY #электроника #гаджеты"},
+    {"url": "https://liliputing.com/feed/", "hashtags": "#мини_ПК #гаджеты #хардвар"},
+    {"url": "https://www.cnx-software.com/feed/", "hashtags": "#SBC #RaspberryPi #хардвар"},
+    {"url": "https://www.tomshardware.com/feeds/all", "hashtags": "#хардвар #железо #обзоры"},
+    {"url": "https://www.anandtech.com/rss/", "hashtags": "#хардвар #процессоры #обзоры"},
 
-    # Приватность / свобода интернета / VPN
+    # Приватность / свобода интернета / VPN / обход блокировок
     {"url": "https://www.eff.org/rss/updates.xml", "hashtags": "#приватность #свобода #интернет"},
     {"url": "https://torrentfreak.com/feed/", "hashtags": "#приватность #VPN #свобода"},
     {"url": "https://www.privacyguides.org/en/blog/feed_rss_created.xml", "hashtags": "#приватность #VPN #безопасность"},
     {"url": "https://protonvpn.com/blog/feed/", "hashtags": "#VPN #приватность #обходБлокировок"},
     {"url": "https://mullvad.net/blog/feed/rss/", "hashtags": "#VPN #приватность"},
+    {"url": "https://www.accessnow.org/feed/", "hashtags": "#свобода #интернет #цензура"},
+    {"url": "https://ooni.org/rss.xml", "hashtags": "#цензура #блокировки #мониторинг"},
+    {"url": "https://citizenlab.ca/feed/", "hashtags": "#цензура #слежка #приватность"},
+    {"url": "https://freedomhouse.org/news/rss.xml", "hashtags": "#свобода #цензура #интернет"},
+    {"url": "https://www.schneier.com/feed/atom/", "hashtags": "#безопасность #приватность #крипто"},
+    {"url": "https://blog.torproject.org/feed/", "hashtags": "#Tor #приватность #обходБлокировок"},
+    {"url": "https://signal.org/blog/rss.xml", "hashtags": "#Signal #шифрование #приватность"},
+    {"url": "https://spreadprivacy.com/rss/", "hashtags": "#DuckDuckGo #приватность #поиск"},
+    {"url": "https://xakep.ru/feed/", "hashtags": "#ИБ #хакер #взлом"},
 
     # Indie-разработка
     {"url": "https://www.indiehackers.com/feed.xml", "hashtags": "#инди #стартапы #разработка"},
