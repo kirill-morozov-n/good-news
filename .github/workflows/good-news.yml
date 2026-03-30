@@ -2,8 +2,8 @@ name: Good News Daily
 
 on:
   schedule:
-    # 04:00 UTC = 07:00 MSK (pipeline takes ~30-90 min)
-    - cron: '0 4 * * *'
+    # 03:00 UTC = 06:00 MSK (pipeline takes ~30-90 min)
+    - cron: '0 3 * * *'
   workflow_dispatch: # manual trigger from GitHub UI
 
 jobs:

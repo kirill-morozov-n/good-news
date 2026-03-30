@@ -2,8 +2,8 @@ name: Evening Meditation
 
 on:
   schedule:
-    # 18:30 UTC = 21:30 MSK — last post before quiet hours
-    - cron: '30 18 * * *'
+    # 17:30 UTC = 20:30 MSK — last post before quiet hours
+    - cron: '30 17 * * *'
   workflow_dispatch: # manual trigger
 
 jobs:

@@ -64,11 +64,11 @@ TELEGRAM_CHANNEL_ID = os.environ.get("TELEGRAM_CHANNEL_ID", "-1002979580175")
 
 # --- Schedule Settings ---
 # Time to run every morning (24-hour format)
-SCHEDULE_TIME = "08:00"
+SCHEDULE_TIME = "07:00"
 
 # --- Quiet Hours (news feed paused) ---
-QUIET_START = "22:00"  # stop posting at this time
-QUIET_END   = "08:00"  # resume posting at this time
+QUIET_START = "21:00"  # stop posting at this time
+QUIET_END   = "07:00"  # resume posting at this time
 
 # --- Output Settings ---
 OUTPUT_DIR = Path(__file__).parent / "output"

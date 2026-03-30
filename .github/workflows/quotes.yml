@@ -2,9 +2,9 @@ name: Daily Quotes
 
 on:
   schedule:
-    # 04:00 UTC (07:00 MSK) and 17:00 UTC (20:00 MSK)
-    - cron: '0 4 * * *'
-    - cron: '0 17 * * *'
+    # 03:00 UTC (06:00 MSK) and 16:00 UTC (19:00 MSK)
+    - cron: '0 3 * * *'
+    - cron: '0 16 * * *'
   workflow_dispatch: # manual trigger
 
 jobs:
