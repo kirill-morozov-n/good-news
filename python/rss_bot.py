@@ -1,7 +1,7 @@
 """
 RSS News Bot
 Fetches articles from RSS feeds, translates via OpenAI gpt-4o-mini,
-and posts to the Telegram channel every 5 minutes with a photo.
+and posts to the Telegram channel every 10 minutes with a photo.
 
 Usage (via main.py):
   python main.py news
@@ -36,7 +36,7 @@ CAPTION_LIMIT = 1024
 # ---------------------------------------------------------------------------
 
 def _load_posted_data() -> dict:
-    """Load {urls: [...], titles: [...]} from disk."""
+    """Load {urls: [...], titles: [...], last_post_time: "ISO"} from disk."""
     if not POSTED_URLS_FILE.exists():
         return {"urls": [], "titles": []}
     try:
@@ -65,7 +65,7 @@ def load_posted_titles() -> set:
     return {_normalize_title(t) for t in _load_posted_data()["titles"] if t}
 
 
-def save_posted(url: str, title: str = "") -> None:
+def save_posted(url: str, title: str = "", update_time: bool = False) -> None:
     POSTED_URLS_FILE.parent.mkdir(parents=True, exist_ok=True)
     data = _load_posted_data()
     if url not in data["urls"]:
@@ -74,12 +74,27 @@ def save_posted(url: str, title: str = "") -> None:
         norm = _normalize_title(title)
         if norm not in {_normalize_title(t) for t in data["titles"]}:
             data["titles"].append(title)
+    if update_time:
+        data["last_post_time"] = datetime.utcnow().isoformat()
     # keep last 3000 to avoid unbounded growth
     data["urls"] = data["urls"][-3000:]
     data["titles"] = data["titles"][-3000:]
     POSTED_URLS_FILE.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+
+def _seconds_since_last_post() -> float | None:
+    """Return seconds since the last successful post, or None if unknown."""
+    data = _load_posted_data()
+    ts = data.get("last_post_time")
+    if not ts:
+        return None
+    try:
+        last = datetime.fromisoformat(ts)
+        return (datetime.utcnow() - last).total_seconds()
+    except Exception:
+        return None
 
 
 def is_title_duplicate(title: str, posted_titles: set) -> bool:
@@ -183,7 +198,7 @@ async def _post_one(posted_urls: set, posted_titles: set, recent_tags: list) -> 
             # Always mark as seen to avoid infinite retry on bad images
             posted_urls.add(article["url"])
             posted_titles.add(_normalize_title(article["title"]))
-            save_posted(article["url"], article["title"])
+            save_posted(article["url"], article["title"], update_time=ok)
             if ok:
                 logger.info("Posted: %s", article["title"])
                 recent_tags.append(_leading_tag(feed["hashtags"]))
@@ -228,6 +243,15 @@ def _quiet_sleep_seconds() -> float | None:
 
 async def post_once() -> bool:
     """Post a single news item and exit. For use with GitHub Actions cron."""
+    # Enforce minimum interval between posts (GitHub Actions cron is imprecise)
+    elapsed = _seconds_since_last_post()
+    if elapsed is not None and elapsed < POST_INTERVAL:
+        logger.info(
+            "news-once: only %d sec since last post (min %d). Skipping.",
+            int(elapsed), POST_INTERVAL,
+        )
+        return False
+
     posted_urls = load_posted_urls()
     posted_titles = load_posted_titles()
     recent_tags: list = []

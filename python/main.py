@@ -43,7 +43,7 @@ def cmd_schedule():
 def cmd_news():
     from rss_bot import run_news_bot
 
-    print("Starting RSS News Bot. Posts every 5 minutes. Press Ctrl+C to stop.\n")
+    print("Starting RSS News Bot. Posts every 10 minutes. Press Ctrl+C to stop.\n")
     try:
         asyncio.run(run_news_bot())
     except KeyboardInterrupt:
@@ -69,6 +69,8 @@ def cmd_meditation():
 
     ok = asyncio.run(post_meditation())
     print("Meditation posted." if ok else "Failed to post meditation.")
+    if not ok:
+        sys.exit(1)
 
 
 def cmd_start():
