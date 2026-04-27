@@ -1,0 +1,218 @@
+[
+  {
+    "slug": "performance-vs-scalability",
+    "title": "Performance vs Scalability",
+    "summary": "Performance — насколько быстро работает один запрос. Scalability — насколько система выдерживает рост нагрузки. Если двойная нагрузка снижает latency пропорционально — у тебя проблема с производительностью; если латентность растёт нелинейно — проблема с масштабируемостью.",
+    "anchor": "performance-vs-scalability"
+  },
+  {
+    "slug": "latency-vs-throughput",
+    "title": "Latency vs Throughput",
+    "summary": "Latency — время выполнения одной операции. Throughput — количество операций в единицу времени. Цель: максимальный throughput при допустимой latency. Часто их можно тюнить раздельно: батчинг увеличивает throughput, но повышает latency; параллелизм снижает latency, но требует ресурсов.",
+    "anchor": "latency-vs-throughput"
+  },
+  {
+    "slug": "cap-theorem",
+    "title": "CAP-теорема",
+    "summary": "В распределённой системе при network partition можно гарантировать только два из трёх: Consistency (все ноды видят одни данные), Availability (каждый запрос получает ответ), Partition tolerance (система работает при разрыве сети). Поскольку partitions неизбежны, выбор стоит между CP (банки, биллинг) и AP (соцсети, поиск).",
+    "anchor": "cap-theorem"
+  },
+  {
+    "slug": "consistency-patterns",
+    "title": "Паттерны консистентности",
+    "summary": "Weak consistency — данные могут быть неактуальны (видеозвонки, игры в реальном времени). Eventual consistency — рано или поздно все реплики синхронизируются (DNS, email). Strong consistency — после записи каждое чтение видит новое значение (файловые системы, RDBMS).",
+    "anchor": "consistency-patterns"
+  },
+  {
+    "slug": "availability-failover",
+    "title": "Failover и репликация",
+    "summary": "Active-passive: пассивный сервер ждёт heartbeat и подхватывает нагрузку при падении активного. Active-active: оба обслуживают трафик. Master-slave replication: записи только в master, чтения — с реплик. Master-master: записи можно делать в любую ноду, но нужны конфликт-резолверы.",
+    "anchor": "fail-over"
+  },
+  {
+    "slug": "availability-numbers",
+    "title": "Девятки доступности",
+    "summary": "99% (две девятки) = 3.65 дня даунтайма в год. 99.9% = 8.76 часов. 99.99% = 52.56 минут. 99.999% (пять девяток) = 5.26 минут. При последовательной зависимости сервисов их availability перемножается: два сервиса по 99.9% дают 99.8% общей доступности.",
+    "anchor": "availability-in-numbers"
+  },
+  {
+    "slug": "dns",
+    "title": "Domain Name System",
+    "summary": "DNS переводит доменные имена в IP. Иерархия: корневые, TLD, authoritative серверы. Записи: A (IPv4), AAAA (IPv6), CNAME (alias), MX (почта). Кеширование на разных уровнях с TTL. Сервисы вроде Route 53 умеют geo-routing, weighted round-robin, latency-based маршрутизацию для балансировки трафика.",
+    "anchor": "domain-name-system"
+  },
+  {
+    "slug": "cdn",
+    "title": "CDN — content delivery network",
+    "summary": "Сеть прокси-серверов по миру, отдающих статику близко к пользователю. Push CDN: ты сам заливаешь контент; хорошо для редко обновляемых сайтов с малым трафиком. Pull CDN: контент скачивается с origin при первом запросе и кешируется на TTL; экономит место, но первая загрузка медленная. Cloudflare, Akamai, CloudFront.",
+    "anchor": "content-delivery-network"
+  },
+  {
+    "slug": "load-balancer",
+    "title": "Балансировщик нагрузки",
+    "summary": "Распределяет запросы между серверами. L4 (транспортный) смотрит на IP/порт — быстро, но без понимания контента. L7 (прикладной) разбирает HTTP — может маршрутизировать по URL, заголовкам, делать SSL termination. Алгоритмы: round-robin, least connections, weighted, IP hash. NGINX, HAProxy, ELB.",
+    "anchor": "load-balancer"
+  },
+  {
+    "slug": "reverse-proxy",
+    "title": "Reverse Proxy",
+    "summary": "Сервер, скрывающий бэкенд за единой точкой входа. Делает SSL termination, gzip, кеширование статики, rate limiting, basic auth. Отличие от LB: reverse proxy полезен даже с одним бэкендом, тогда как LB — только с несколькими. NGINX и Caddy часто играют обе роли одновременно.",
+    "anchor": "reverse-proxy-web-server"
+  },
+  {
+    "slug": "microservices",
+    "title": "Микросервисы",
+    "summary": "Разбиение монолита на маленькие сервисы вокруг бизнес-доменов. Каждый — независимый деплой, своя БД, своя команда. Плюсы: независимое масштабирование, выбор технологий, изоляция сбоев. Минусы: сетевая латентность, distributed tracing, сложность транзакций. Не нужно с самого начала — Netflix и Amazon шли к ним годами.",
+    "anchor": "microservices"
+  },
+  {
+    "slug": "service-discovery",
+    "title": "Service Discovery",
+    "summary": "Как сервисы находят друг друга в динамической среде. Client-side: клиент спрашивает реестр (Consul, etcd, Zookeeper) и сам выбирает инстанс. Server-side: запрос идёт через LB, который смотрит реестр. Health checks автоматически выбрасывают мёртвые ноды. В Kubernetes это встроено через DNS и Services.",
+    "anchor": "service-discovery"
+  },
+  {
+    "slug": "rdbms-acid",
+    "title": "RDBMS и ACID",
+    "summary": "Реляционные БД (PostgreSQL, MySQL) дают ACID: Atomicity (всё или ничего), Consistency (соблюдаются constraints), Isolation (параллельные транзакции не мешают), Durability (зафиксированные данные не теряются). Цена — сложность горизонтального масштабирования и блокировки на запись.",
+    "anchor": "relational-database-management-system-rdbms"
+  },
+  {
+    "slug": "db-sharding",
+    "title": "Шардирование БД",
+    "summary": "Горизонтальное разбиение таблиц по разным машинам. Стратегии: по диапазону (user_id 0–1M на shard A, 1M–2M на shard B), по хешу (равномернее, но сложно делать диапазонные запросы), по геолокации. Проблемы: re-sharding при росте, joins между шардами, hot shards. Используют Instagram, Discord, Notion.",
+    "anchor": "sharding"
+  },
+  {
+    "slug": "db-federation",
+    "title": "Федерация БД",
+    "summary": "Разделение БД по функциям: forums-db, users-db, products-db. Снижает read/write нагрузку на каждую и улучшает кеш-локальность. Проще шардирования, но плох для кросс-функциональных join'ов и не помогает, когда одна функция сама стала узким местом.",
+    "anchor": "federation"
+  },
+  {
+    "slug": "db-denormalization",
+    "title": "Денормализация",
+    "summary": "Дублирование данных, чтобы избежать дорогих join'ов на больших таблицах. Ускоряет чтения, замедляет записи и усложняет поддержание согласованности. Имеет смысл, когда чтений на порядки больше записей. В NoSQL это норма; в RDBMS — компромисс ради производительности.",
+    "anchor": "denormalization"
+  },
+  {
+    "slug": "nosql-types",
+    "title": "Типы NoSQL",
+    "summary": "Key-value (Redis, DynamoDB) — O(1) доступ по ключу, идеально для кешей и сессий. Document (MongoDB, Couchbase) — гибкая схема, JSON. Wide-column (Cassandra, HBase) — таблицы с миллиардами строк, оптимизированы под write-heavy. Graph (Neo4j) — связи и обход графа: соцсети, fraud detection, рекомендации.",
+    "anchor": "nosql"
+  },
+  {
+    "slug": "sql-vs-nosql",
+    "title": "SQL или NoSQL",
+    "summary": "SQL — когда нужны ACID, сложные запросы и фиксированная схема (банки, ERP, биллинг). NoSQL — когда нужны массивные write rates, гибкая схема, географическое распределение и можно жить с eventual consistency (логи, метрики, real-time аналитика, ленты соцсетей). Большинство крупных систем используют оба сразу.",
+    "anchor": "sql-or-nosql"
+  },
+  {
+    "slug": "cache-locations",
+    "title": "Где кешировать",
+    "summary": "Слои кеша: клиент (браузер), CDN, web server (NGINX), database query cache, application (Redis/Memcached), object cache внутри приложения. Чем ближе к пользователю — тем быстрее, но сложнее инвалидировать. Большие системы используют все слои одновременно.",
+    "anchor": "cache"
+  },
+  {
+    "slug": "cache-strategies",
+    "title": "Стратегии обновления кеша",
+    "summary": "Cache-aside (lazy): приложение сначала смотрит в кеш, при miss идёт в БД и кладёт результат. Write-through: запись идёт сразу в кеш и БД синхронно. Write-behind: запись в кеш, БД обновляется асинхронно — быстро, но риск потери данных. Refresh-ahead: кеш сам обновляет горячие ключи до их экспирации.",
+    "anchor": "when-to-update-the-cache"
+  },
+  {
+    "slug": "cache-pitfalls",
+    "title": "Подводные камни кеша",
+    "summary": "Stale data: после обновления БД кеш ещё держит старое. Cache stampede: тысячи параллельных miss'ов на один ключ кладут БД (лечится lock'ом или request coalescing). Cold cache: после рестарта пустой кеш не справляется с пиком (warm-up или прогрев из бэкапа). Hot key: один ключ читают все — нужен local cache на клиентах.",
+    "anchor": "disadvantages-cache"
+  },
+  {
+    "slug": "message-queues",
+    "title": "Message Queues",
+    "summary": "Очереди отвязывают продюсеров от консьюмеров: запрос принят — отдай 202 и обработай в фоне. Гарантии: at-most-once, at-least-once, exactly-once (последнее почти миф). RabbitMQ, AWS SQS, Kafka. Используют для отправки писем, индексации, видео-транскодинга, аналитики. Дают back pressure и retry.",
+    "anchor": "message-queues"
+  },
+  {
+    "slug": "task-queues",
+    "title": "Task Queues",
+    "summary": "Надстройка над очередью с воркерами, ретраями, расписанием и приоритетами. Celery (Python), Sidekiq (Ruby), RQ. Идеально для долгих задач: генерация отчётов, отправка почты, ML-инференс. Stateless воркеры легко масштабируются — просто запусти больше реплик.",
+    "anchor": "task-queues"
+  },
+  {
+    "slug": "back-pressure",
+    "title": "Back Pressure",
+    "summary": "Когда производитель быстрее потребителя, очередь раздувается и память кончается. Решения: ограничить размер очереди и блокировать продюсера, отбрасывать старые сообщения, отдавать 503/429 клиенту, замедлять входящий трафик через rate limiter. Без back pressure система каскадно падает.",
+    "anchor": "back-pressure"
+  },
+  {
+    "slug": "tcp-vs-udp",
+    "title": "TCP vs UDP",
+    "summary": "TCP — соединение, гарантии доставки и порядка, контроль перегрузки; нужен HTTP, базам, файлам. UDP — без соединения, без гарантий, минимальный overhead; нужен видеозвонкам, играм, DNS, метрикам, где потеря пакета лучше задержки. QUIC (HTTP/3) — это UDP с надёжностью, лучшее из двух миров.",
+    "anchor": "transmission-control-protocol-tcp"
+  },
+  {
+    "slug": "http",
+    "title": "HTTP — как устроен",
+    "summary": "Stateless протокол поверх TCP. Методы: GET (идемпотентен), POST (создание), PUT/DELETE (идемпотентны). Коды: 2xx успех, 3xx редирект, 4xx ошибка клиента, 5xx ошибка сервера. HTTP/2 даёт мультиплексирование и server push, HTTP/3 — поверх QUIC, переживает смену сети без новых хендшейков.",
+    "anchor": "hypertext-transfer-protocol-http"
+  },
+  {
+    "slug": "rpc",
+    "title": "RPC и gRPC",
+    "summary": "Remote Procedure Call — вызов удалённой функции, как локальной. Контракт описан в IDL (protobuf, thrift). gRPC: бинарный, поверх HTTP/2, поддерживает стриминг в обе стороны, генерирует клиенты под десятки языков. Быстрее REST'а, но хуже отлаживается через curl. Хорошо для inter-service коммуникации в микросервисах.",
+    "anchor": "remote-procedure-call-rpc"
+  },
+  {
+    "slug": "rest",
+    "title": "REST",
+    "summary": "Архитектурный стиль: ресурсы по URI, операции через HTTP-методы, представления — JSON/XML. Stateless: каждый запрос самодостаточен. Cacheable, uniform interface, layered. REST — это набор правил, а не протокол. Для CRUD-сервисов, публичных API и мобильных бэкендов остаётся стандартом.",
+    "anchor": "representational-state-transfer-rest"
+  },
+  {
+    "slug": "rest-vs-rpc",
+    "title": "REST vs RPC",
+    "summary": "REST — про ресурсы и состояние, отлично кешируется через HTTP, хорошо подходит для публичных API. RPC — про действия и операции, эффективнее для сложных межсервисных вызовов, но завязан на тулинг. Правило: REST для внешних API, gRPC — для внутренних между сервисами.",
+    "anchor": "rpc-and-rest-calls-comparison"
+  },
+  {
+    "slug": "security-basics",
+    "title": "Security: базовый минимум",
+    "summary": "Шифруй на транзите (TLS) и at rest. Параметризуй запросы — против SQL injection. Sanitize input против XSS. CSRF-токены для форм. Используй принцип наименьших привилегий. Никогда не катай свою криптографию. OWASP Top 10 — обязательное чтение для любого, кто пишет веб.",
+    "anchor": "security"
+  },
+  {
+    "slug": "case-pastebin",
+    "title": "Кейс: Design Pastebin / Bit.ly",
+    "summary": "Сервис коротких ссылок и paste'ов. Ключевые решения: генерация уникального короткого ID (base62 от автоинкремента или хеш + проверка коллизий), шардирование по hash ID, аналитика просмотров через очередь, кеширование популярных ссылок в Memcached. На запись 1:10 от чтений — оптимизируем чтения.",
+    "anchor": "design-pastebincom-or-bitly"
+  },
+  {
+    "slug": "case-twitter",
+    "title": "Кейс: Design Twitter Feed",
+    "summary": "Главная проблема — feed: показать ленту тысяч подписок за миллисекунды. Fan-out on write: при твите push копий в кеш ленты подписчиков (быстро для чтения, дорого если 100M подписчиков). Fan-out on read: собирать ленту в момент чтения (дёшево по памяти, медленно). Гибрид: fan-out on write для обычных, fan-out on read для звёзд.",
+    "anchor": "design-the-twitter-timeline-and-search-or-facebook-feed-and-search"
+  },
+  {
+    "slug": "case-web-crawler",
+    "title": "Кейс: Web Crawler",
+    "summary": "Распределённый паук, обходящий миллиарды URL. Очередь URL'ов с дедупликацией через Bloom filter. Шардирование воркеров по домену для уважения robots.txt и rate limits. Storage: raw HTML в blob, distilled данные — в поисковый индекс. Backoff при 429/503. Главная сложность — отличить новый контент от уже виденного и обходить ловушки (бесконечные календари).",
+    "anchor": "design-a-web-crawler"
+  },
+  {
+    "slug": "case-mint",
+    "title": "Кейс: Design Mint.com",
+    "summary": "Агрегатор финансов: пуллинг транзакций из 10000 банков, категоризация, аналитика. Воркеры на cron тянут транзакции через bank API/scraping и кладут в очередь. Категоризатор (ML или rule-based) присваивает категорию. Чтения — из денормализованной view, обновляемой асинхронно. Чувствительные данные шифруются столбцом.",
+    "anchor": "design-mintcom"
+  },
+  {
+    "slug": "case-social-graph",
+    "title": "Кейс: Design Social Graph",
+    "summary": "Друзья друзей, рекомендации, общие связи. Хранение: graph DB (Neo4j) или adjacency list в шардированной KV-store. Двухуровневый поиск (BFS depth=2) с cap'ом по количеству узлов. Кеширование подграфов горячих пользователей. При миллиарде юзеров — приближённый поиск на основе sampling и precomputed similarity.",
+    "anchor": "design-the-data-structures-for-a-social-network"
+  },
+  {
+    "slug": "case-scaling-aws",
+    "title": "Кейс: Scaling до миллионов на AWS",
+    "summary": "Эволюция: один EC2 → отдельный RDS → ELB + auto-scaling group → CloudFront для статики → ElastiCache → read replicas → шардирование БД → SQS для асинхрона → multi-AZ → multi-region. Каждый шаг включается, когда метрики говорят — не раньше. Преждевременная архитектура убивает стартапы.",
+    "anchor": "design-a-system-that-scales-to-millions-of-users-on-aws"
+  }
+]

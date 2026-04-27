@@ -62,11 +62,15 @@ async def run_research_session() -> dict:
         notebook_id = nb.id
         logger.info("Notebook created: %s", notebook_id)
 
-        # 2. Build prompt with "already covered" context
+        # 2. Build prompt with "already covered" context + system-design tip
+        from system_design import build_audio_addendum
+
         avoid_section = news_log.build_avoid_section()
-        prompt = config.RESEARCH_PROMPT + avoid_section
+        sd_addendum = build_audio_addendum()
+        prompt = config.RESEARCH_PROMPT + avoid_section + sd_addendum
         if avoid_section:
             logger.info("Injected %d chars of covered-topics context into prompt.", len(avoid_section))
+        logger.info("Injected system-design tip (%d chars).", len(sd_addendum))
 
         # 3. Start deep research (with retry on timeout/network errors)
         logger.info("Starting deep research (mode=%s)...", config.RESEARCH_MODE)

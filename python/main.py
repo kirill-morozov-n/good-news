@@ -3,9 +3,15 @@
 Good News — NotebookLM Deep Research Automation
 
 Usage:
-  python main.py run        Run the research pipeline immediately
-  python main.py schedule   Start the daily morning scheduler
-  python main.py login      Authenticate with Google (first-time setup)
+  python main.py run            Run the research pipeline immediately
+  python main.py schedule       Start the daily morning scheduler
+  python main.py news           Start the RSS news bot loop
+  python main.py news-once      Post one RSS news item and exit
+  python main.py quote          Post one daily quote and exit
+  python main.py meditation     Post one evening meditation and exit
+  python main.py system-design  Post one system-design topic and exit
+  python main.py start          Run RSS bot + daily research together
+  python main.py login          Authenticate with Google (first-time setup)
 """
 
 import asyncio
@@ -73,6 +79,15 @@ def cmd_meditation():
         sys.exit(1)
 
 
+def cmd_system_design():
+    from system_design import post_system_design
+
+    ok = asyncio.run(post_system_design())
+    print("System design posted." if ok else "Failed to post system design.")
+    if not ok:
+        sys.exit(1)
+
+
 def cmd_start():
     from rss_bot import run_news_bot
     from scheduler import run_scheduler
@@ -107,6 +122,7 @@ COMMANDS = {
     "news-once": cmd_news_once,
     "quote": cmd_quote,
     "meditation": cmd_meditation,
+    "system-design": cmd_system_design,
     "start": cmd_start,
 }
 

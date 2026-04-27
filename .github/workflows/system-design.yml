@@ -1,0 +1,37 @@
+name: System Design Daily
+
+on:
+  schedule:
+    # 09:00 UTC = 12:00 MSK
+    - cron: '0 9 * * *'
+  workflow_dispatch: # manual trigger
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Restore system-design state
+        uses: actions/cache@v4
+        with:
+          path: python/output/system_design_state.json
+          key: system-design-state-${{ github.run_id }}
+          restore-keys: system-design-state-
+
+      - name: Post system design topic
+        working-directory: python
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: python main.py system-design
