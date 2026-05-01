@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 import random
+import re
 from datetime import datetime, time as dtime, timedelta
 from pathlib import Path
 
@@ -55,7 +56,6 @@ def load_posted_urls() -> set:
 
 def _normalize_title(title: str) -> str:
     """Lowercase, strip punctuation and extra spaces for fuzzy matching."""
-    import re
     t = title.lower().strip()
     t = re.sub(r"[^\w\s]", "", t)
     return re.sub(r"\s+", " ", t).strip()
@@ -110,6 +110,385 @@ def is_title_duplicate(title: str, posted_titles: set) -> bool:
         if len(prev) >= 30 and (prev in norm or norm in prev):
             return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# Sexual content filter
+# ---------------------------------------------------------------------------
+# Match terms that are virtually always explicit, plus unambiguous phrases
+# ("nude photos", "секс-скандал"). Avoid bare roots like "nude" or "sexy"
+# that are commonly used in cosmetic / fashion contexts.
+
+_SEXUAL_PATTERNS = [
+    # Explicit English terms
+    r"\bporn\w*",
+    r"\bpornhub\b",
+    r"\bonlyfans\b",
+    r"\bxxx\b",
+    r"\berotic\w*",
+    r"\bhentai\b",
+    r"\bfetish\w*",
+    r"\bbdsm\b",
+    r"\borgasm\w*",
+    r"\bmasturbat\w*",
+    r"\bintercourse\b",
+    r"\brape\w*",
+    r"\bincest\w*",
+    r"\bpedoph\w*",
+    r"\bgenitals?\b",
+    r"\bsodom\w*",
+    # Unambiguous English phrases
+    r"\bsex (?:tape|scene|scenes|scandal|scandals|worker|workers|party|parties|"
+    r"ring|rings|crime|crimes|offender|offenders|abuse|assault|trafficking|"
+    r"trade|slavery|work|act|acts|addict|addiction|toy|toys|doll|dolls)\b",
+    r"\bsexual (?:abuse|assault|harassment|misconduct|violence|predator|exploitation)\b",
+    r"\bnude (?:photo|photos|pic|pics|picture|pictures|shoot|shoots|leak|leaks|"
+    r"scene|scenes|selfie|selfies)\b",
+    r"\bleaked nude\w*",
+    r"\btopless (?:photo|photos|pic|pics|selfie|selfies|shoot|scene|scenes)\b",
+    r"\bnaked (?:photo|photos|pic|pics|selfie|selfies|body|bodies)\b",
+    # Russian explicit
+    r"порн\w*",
+    r"эрот\w*",
+    r"разврат\w*",
+    r"проститут\w*",
+    r"бдсм",
+    r"мастурб\w*",
+    r"оргазм\w*",
+    r"изнасил\w*",
+    r"педофил\w*",
+    r"садомаз\w*",
+    r"\bпенис\w*",
+    r"вагин\w+",
+    r"гениталий|гениталии|гениталиям",
+    # Russian phrases
+    r"секс[- ]?скандал\w*",
+    r"секс[- ]?тур\w*",
+    r"секс[- ]?работ\w*",
+    r"секс[- ]?шоп\w*",
+    r"секс[- ]?вечеринк\w*",
+    r"секс[- ]?рабын\w*",
+    r"секс[- ]?игрушк\w*",
+    r"интимн(?:ое|ые|ого|ым|ом|ой) (?:фото|видео|снимк|снимки|снимок|кадр|кадры|переписк)",
+    r"откровенн(?:ое|ые|ых|ыми) (?:фото|видео|снимк|кадр)",
+    r"обнажённ?(?:ая|ое|ые|ого|ых|ыми) (?:фото|натур|тело|снимк)",
+    r"полов(?:ой|ые|ым) (?:акт|акты)",
+    r"домогательств\w*",
+]
+
+_SEXUAL_RE = re.compile("|".join(_SEXUAL_PATTERNS), re.IGNORECASE)
+
+
+def is_sexual_content(*texts: str) -> bool:
+    """Return True if any of the given text fragments matches an explicit pattern."""
+    for t in texts:
+        if t and _SEXUAL_RE.search(t):
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Military / defense / war content filter
+# ---------------------------------------------------------------------------
+# Match unambiguous phrases that practically always indicate war / armed
+# conflict / defense industry content. Avoid bare roots like "war", "bomb",
+# "weapon", "tank", "combat", "camo" — they overlap with benign vocabulary
+# (trade war, bath bomb, secret weapon, tank top, combat boots, camo print,
+# fashion army, ракета продаж, армия фанатов, etc.).
+
+_MILITARY_PATTERNS = [
+    # ---- English: explicit military / war ----
+    r"\bairstrike\w*",
+    r"\bair[- ]strike\w*",
+    r"\bmissile (?:strike|strikes|attack|attacks|launch|launches|test|tests|"
+    r"barrage|salvo|fired|hit|hits|defen[cs]e|interceptor)\b",
+    r"\bballistic missile\w*",
+    r"\bcruise missile\w*",
+    r"\bhypersonic missile\w*",
+    r"\bnuclear (?:strike|weapon|weapons|war|warhead|warheads|arsenal|"
+    r"threat|deterrent|deterrence|escalation|test|tests|fallout)\b",
+    r"\bchemical weapon\w*",
+    r"\bbiological weapon\w*",
+    r"\bdirty bomb\w*",
+    r"\bsuicide bomb\w+",
+    r"\bcar bomb\w*",
+    r"\bIED\b",
+    r"\bRPG launcher\w*",
+    r"\bgrenade launcher\w*",
+    r"\bwar crime\w*",
+    r"\bwar zone\w*",
+    r"\bwar[- ]zone\w*",
+    r"\bbattlefield\w*",
+    r"\bbattlefront\w*",
+    r"\bfront[- ]?line (?:fighter|fighters|soldier|soldiers|troop|troops|"
+    r"fighting|combat|positions?|trenches?)\b",
+    r"\bcombat (?:zone|zones|mission|missions|operation|operations|troops|"
+    r"soldier|soldiers|patrol|patrols|fatigue|fatigues|casualt\w+)\b",
+    r"\bground offensive\w*",
+    r"\bcounter[- ]offensive\w*",
+    r"\bmilitary (?:operation|operations|strike|strikes|aid|action|actions|"
+    r"invasion|offensive|exercise|exercises|drill|drills|drone|drones|base|"
+    r"bases|deployment|deployments|forces?|intervention|coup|conflict|"
+    r"alliance|build[- ]?up|hardware|equipment|spending|budget|industrial|"
+    r"complex|contractor|contractors|supplies|supply|technology|aircraft|"
+    r"vehicle|vehicles|personnel|aid package|junta|parade)\b",
+    r"\bdefen[cs]e (?:ministry|minister|contractor|contractors|industry|"
+    r"spending|budget|deal|deals|company|companies|firm|firms|sector|"
+    r"stock|stocks|supplier|suppliers|tech|production|exports?)\b",
+    r"\barms (?:deal|deals|race|export|exports|import|imports|sale|sales|"
+    r"supply|supplies|industry|manufacturer|manufacturers|shipment|"
+    r"shipments|embargo|embargoes|smuggling|trafficking|dealer|dealers)\b",
+    r"\bweapons (?:deal|deals|export|exports|import|imports|supply|supplies|"
+    r"smuggling|trafficking|shipment|shipments|cache|stockpile|stockpiles|"
+    r"manufacturer|manufacturers|program|programme|programs|programmes|"
+    r"factory|factories|plant|plants)\b",
+    r"\bartillery (?:shell|shells|fire|strike|strikes|barrage|battery|"
+    r"batteries|attack|attacks|shelling|bombardment)\b",
+    r"\bshelling\b",
+    r"\bbombardment\w*",
+    r"\bbombing (?:campaign|raid|raids|run|runs|attack|attacks)\b",
+    r"\bdrone (?:strike|strikes|attack|attacks|warfare|swarm|swarms)\b",
+    r"\bkamikaze drone\w*",
+    r"\bPOW\b",
+    r"\bprisoner[s]? of war\b",
+    r"\bhostage[s]? (?:taking|crisis|deal|exchange|release|negotiations?)\b",
+    r"\bceasefire\w*",
+    r"\bcease[- ]fire\w*",
+    r"\bmobilization\b",
+    r"\bmobilisation\b",
+    r"\bconscription\b",
+    r"\binvading force\w*",
+    r"\bmilitary invasion\b",
+    r"\boccupied territor\w+",
+    r"\bgenocide\b",
+    r"\bethnic cleansing\b",
+    # Specific weapons / systems
+    r"\bF-?16\w*",
+    r"\bF-?35\w*",
+    r"\bHIMARS\b",
+    r"\bPatriot (?:missile|missiles|battery|batteries|system|systems)\b",
+    r"\bIron Dome\b",
+    r"\bATACMS\b",
+    r"\bJavelin missile\w*",
+    r"\bStinger missile\w*",
+    r"\bKalashnikov\w*",
+    r"\bAK-?47\b",
+    # Designated militant / terror groups in active-conflict reporting
+    r"\bISIS\b",
+    r"\bISIL\b",
+    r"\bal[- ]qaeda\b",
+    r"\bTaliban\b",
+    r"\bHamas\b",
+    r"\bHezbollah\b",
+    r"\bHouthi\w*",
+    r"\bIslamic State\b",
+    r"\bWagner (?:group|mercenar)\w*",
+    # Named conflicts
+    r"\b(?:russia|russian)[- ]ukraine war\b",
+    r"\bwar in ukraine\b",
+    r"\bukraine war\b",
+    r"\bgaza war\b",
+    r"\bisrael[- ]hamas war\b",
+    r"\bsyrian (?:civil )?war\b",
+    r"\bcivil war\b",
+    r"\bproxy war\b",
+    r"\bworld war\b",
+    # ---- Russian: explicit military / war ----
+    r"военнослужащ\w+",
+    r"военнопленн\w+",
+    r"военкомат\w*",
+    r"вооруж[её]нн\w* конфликт\w*",
+    r"вооруж[её]нн\w* сил\w*",
+    r"\bвооружени\w*",
+    r"\bбоеприпас\w*",
+    r"военн(?:ая|ой|ую) (?:операци|техник|промышленност|агресси|кампани|"
+    r"реформ|доктрин|разведк|базой?)\w*",
+    r"военн(?:ый|ого|ому|ом) (?:конфликт|удар|поход|бюджет|заказ|альянс|"
+    r"парад|переворот|трибунал)\w*",
+    r"военн(?:ые|ых|ыми) (?:действи|преступлени|учени|сбор|поставк|баз|"
+    r"расход|формировани|подразделени)\w*",
+    r"боев(?:ые|ых|ыми) действи\w*",
+    r"боев(?:ое|ого|ому) дежурств\w*",
+    r"оборонн(?:ая|ой|ую) (?:промышленност|отрасл|компани|сфер|стратеги)\w*",
+    r"оборонн(?:ый|ого|ому) (?:заказ|комплекс|бюджет|сектор|концерн|"
+    r"холдинг|завод)\w*",
+    r"оборонк\w+",
+    r"оборонпром\w*",
+    r"\bВПК\b",
+    r"министерств\w+ обороны",
+    r"\bМинобороны\b",
+    r"\bГенштаб\w*",
+    r"\bПентагон\w*",
+    r"ракетн(?:ый|ого|ому|ом) (?:удар|обстрел|комплекс|пуск|залп|атак)\w*",
+    r"ракетн(?:ая|ой|ую) (?:атак|опасност|угроз|оборон|систем)\w*",
+    r"ракетн(?:ые|ых|ыми) (?:удар|войск|обстрел|пуск)\w*",
+    r"баллистическ\w* ракет\w*",
+    r"крылат\w* ракет\w*",
+    r"гиперзвуков\w* ракет\w*",
+    r"ядерн(?:ая|ое|ой|ом|ый|ого|ому|ыми) (?:удар|оружи|война|угроз|"
+    r"арсенал|боеголовк|заряд|бомб|испытани|шантаж|сдерживани|потенциал)\w*",
+    r"химическ\w* оружи\w*",
+    r"биологическ\w* оружи\w*",
+    r"артобстрел\w*",
+    r"артиллерийск\w* (?:обстрел|удар|бой|огонь|батаре)\w*",
+    r"авиауд\w*",
+    r"авианал[её]т\w*",
+    r"бомбардиров\w*",
+    r"бомб[её]жк\w*",
+    r"наступлени\w+ (?:армии|войск|на)",
+    r"контрнаступлени\w+",
+    r"спецоперац\w+",
+    r"\bСВО\b",
+    r"мобилизац\w+",
+    r"частичн\w* мобилизаци\w*",
+    r"всеобщ\w* мобилизаци\w*",
+    r"дезертирств\w*",
+    r"военн\w+ эшелон\w*",
+    r"военн\w+ техник\w*",
+    r"бронетехник\w*",
+    r"\bтерак\w+",
+    r"террористическ\w* (?:атак|акт|нападени|групп|организаци|операци)\w*",
+    r"\bТалибан\w*",
+    r"\bХАМАС\w*",
+    r"\bХезболл\w*",
+    r"\bИГИЛ\w*",
+    r"\bхуситов\b",
+    r"\bхуситы\b",
+    r"\bВагнер(?:а|у|ом) (?:групп|ЧВК|наёмник|наемник)\w*",
+    r"война (?:в|с|на|против) [А-ЯA-Z][а-яa-z]+",
+    r"войны (?:в|с|на) [А-ЯA-Z][а-яa-z]+",
+    r"войн[уы] в Украин\w+",
+    r"гражданск\w* войн\w*",
+    r"мировая войн\w*",
+    r"перв\w* мирова\w*",
+    r"втор\w* мирова\w*",
+    r"холодн\w* войн\w*",
+    r"\bдрон[- ]камикадзе\w*",
+    r"ударн\w* дрон\w*",
+    r"беспилотн\w* (?:удар|атак|налёт|налет)\w*",
+    r"оккупаци\w+",
+    r"оккупирован\w+ (?:террит|город|регион|посёлк|посел)\w*",
+    r"линия фронта",
+    r"линии фронта",
+    r"фронтов\w* (?:сводк|зон|обстрел|боев|линии)\w*",
+    r"геноцид\w*",
+    r"этническ\w* чистк\w*",
+    r"\bЛНР\b",
+    r"\bДНР\b",
+    r"\bСБУ\b",
+    r"\bФСБ\b",
+    r"\bЦАХАЛ\w*",
+    # ---- War-adjacent: occupied territories / civilian casualties / press in conflict ----
+    r"\boccupied palestin\w*",
+    r"\bgaza (?:strip|war|conflict|crisis|hospital|hospitals|civilian|civilians|"
+    r"casualt\w+|death|deaths|killed|under attack|under fire|bombardment|"
+    r"siege|blockade|truce|ceasefire|aid|reconstruction)\b",
+    r"\bwest bank (?:settlement|settlements|raid|raids|incursion|incursions|"
+    r"operation|operations|crackdown|crackdowns|protest|protests|clashes)\b",
+    r"\bcivilian (?:casualt\w+|death|deaths|killed|wounded|injured|displaced|"
+    r"targeted|under fire|under attack|killings)\b",
+    r"\b(?:journalist|journalists|press|media|hospital|hospitals|school|"
+    r"schools|aid worker|aid workers|paramedic|paramedics) "
+    r"(?:killed|wounded|targeted|attacked|under fire|under attack|displaced|"
+    r"detained|abducted)\b",
+    r"\battacks? on (?:journalist|journalists|press|media|hospital|hospitals|"
+    r"school|schools|aid worker|aid workers|civilian|civilians)\b",
+    r"\bpress freedom in (?:occupied|gaza|ukraine|russia|iran|syria|yemen|"
+    r"war|conflict|wartime|china)\b",
+    r"\bmedia infrastructure (?:destruction|attack|damage|targeting|destroyed|"
+    r"attacked|damaged|targeted|wiped out)\b",
+    r"\bhumanitarian (?:crisis|catastrophe|disaster|corridor|corridors|"
+    r"truce|pause|ceasefire)\b",
+    r"\brefugee crisis\b",
+    r"\binternally displaced (?:person|persons|people|civilian|civilians)\b",
+    r"\bdeath toll (?:in|from|of|after) (?:gaza|ukraine|war|strike|strikes|"
+    r"attack|attacks|conflict|bombing|airstrike|airstrikes|raid|raids)\b",
+    r"\bmass grave\w*",
+    r"\bwar[- ]affected\b",
+    r"\boccupying force\w*",
+    r"\bsettler violence\b",
+    r"\bwar reporter\w*",
+    r"\bcombat journalis\w*",
+    r"\bwomen and children killed\b",
+    r"оккупирован\w+ палестинск\w+",
+    r"палестинск\w+ территори\w+",
+    r"\bсектор\w* Газ[ыеау]\b",
+    r"в Газ[еыау] (?:под|удар|обстрел|жертв|погиб|убит|разруш|гуманитар|"
+    r"конфликт|войн|перемир|больниц|госпитал)\w*",
+    r"удар\w+ по Газ[еыау]\b",
+    r"обстрел\w+ Газ[ыеау]\b",
+    r"журналист\w+ (?:погиб|убит|ранен|задержан|арестован|пропал|убива)\w*",
+    r"нападени\w+ на (?:журналист|медиа|пресс|редакци|больниц|школ|"
+    r"госпитал|мирн|гражданск)\w+",
+    r"разрушени\w+ медиа[- ]инфраструктур\w+",
+    r"уничтожени\w+ медиа[- ]инфраструктур\w+",
+    r"свобод\w+ прессы в (?:Газе|Газу|Газы|оккупир|зон\w* конфликт|"
+    r"зон\w* войн|Украин|России|Иран|Сири|Кита)\w*",
+    r"цензур\w+ в (?:зон\w+ (?:конфликт|войн|бо)|оккупир)\w*",
+    r"мирн\w+ жител\w+ (?:погиб|убит|ранен|пострада|расстрел)\w*",
+    r"гражданск\w+ (?:жертв|потер|погибш|убит|ранен|расстрел)\w*",
+    r"беженц\w+ из зон\w+ (?:конфликт|войн|бо)\w*",
+    r"вынужденн\w+ переселенц\w+",
+    r"гуманитарн\w+ (?:катастроф|кризис|корид|перемир|пауз)\w*",
+    r"массов\w+ захоронени\w+",
+    r"число (?:погибш|жертв|убит|ранен) (?:среди мирных|в Газ|в Украин|"
+    r"в результате удар|в результате обстрел|в результате авиауд|"
+    r"в результате бомб)\w*",
+    r"поселенческ\w+ насили\w+",
+    r"военн\w+ корреспондент\w+",
+]
+
+_MILITARY_RE = re.compile("|".join(_MILITARY_PATTERNS), re.IGNORECASE)
+
+
+def is_military_content(*texts: str) -> bool:
+    """Return True if any of the given text fragments matches a military / war / defense pattern."""
+    for t in texts:
+        if t and _MILITARY_RE.search(t):
+            return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Vague-content filter
+# ---------------------------------------------------------------------------
+# Reject articles like "Учёные обнаружили четыре психических состояния..."
+# that lack any concrete entity (names, brands, numbers, organizations).
+# Heuristic: an article counts as concrete if at least one of these holds —
+#   - any digit anywhere (year, percentage, dollar amount, count)
+#   - any Latin word ≥ 3 chars (brand, abbreviation, acronym)
+#   - any mid-sentence Cyrillic capitalized word ≥ 4 chars (proper noun)
+# Otherwise it's "vague" and skipped.
+
+_DIGIT_RE = re.compile(r"\d")
+_LATIN_RE = re.compile(r"[A-Za-z]{3,}")
+_VAGUE_SENTENCE_STARTS = {
+    "учёные", "ученые", "исследователи", "эксперты", "специалисты",
+    "врачи", "медики", "психологи", "нейробиологи", "химики", "физики",
+    "биологи", "астрономы", "разработчики", "инженеры", "программисты",
+    "аналитики", "социологи", "экономисты", "археологи", "журналисты",
+    "научные", "научный", "новое", "новая", "новый", "новые",
+    "это", "этот", "эта", "эти", "своё", "свой", "своя", "свои",
+}
+
+
+def is_vague_content(title: str, description: str) -> bool:
+    """Return True if the article has no concrete entities (names, numbers, brands)."""
+    text = f"{title or ''}. {description or ''}".strip()
+    if not text:
+        return True
+    if _DIGIT_RE.search(text):
+        return False
+    if _LATIN_RE.search(text):
+        return False
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        tokens = re.findall(r"[А-ЯЁ][а-яё]+(?:[-–—][А-ЯЁ][а-яё]+)*", sentence)
+        if not tokens:
+            continue
+        for tok in tokens[1:]:
+            if len(tok) >= 4 and tok.lower() not in _VAGUE_SENTENCE_STARTS:
+                return False
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +565,27 @@ async def _post_one(posted_urls: set, posted_titles: set, recent_tags: list) -> 
         # Skip if title too similar to an already-posted article
         if is_title_duplicate(article["title"], posted_titles):
             logger.info("Skipped duplicate title: %s", article["title"])
+            posted_urls.add(article["url"])
+            save_posted(article["url"])
+            continue
+
+        # Skip sexually explicit content
+        if is_sexual_content(article["title"], article["description"], article["url"]):
+            logger.info("Skipped sexual content: %s", article["title"])
+            posted_urls.add(article["url"])
+            save_posted(article["url"])
+            continue
+
+        # Skip war / military / defense industry / occupation content
+        if is_military_content(article["title"], article["description"], article["url"]):
+            logger.info("Skipped military content: %s", article["title"])
+            posted_urls.add(article["url"])
+            save_posted(article["url"])
+            continue
+
+        # Skip vague articles with no concrete entities (names, numbers, brands)
+        if is_vague_content(article["title"], article["description"]):
+            logger.info("Skipped vague content: %s", article["title"])
             posted_urls.add(article["url"])
             save_posted(article["url"])
             continue
