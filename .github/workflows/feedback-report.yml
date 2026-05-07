@@ -1,0 +1,45 @@
+name: Feedback Report
+
+on:
+  workflow_dispatch: # manual trigger only
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r python/requirements.txt
+
+      - name: Restore posted articles cache (read-only)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            python/output/rss_posted.json
+            python/output/reactions.json
+            python/output/feedback_state.json
+          key: rss-posted-${{ github.run_id }}
+          restore-keys: rss-posted-
+
+      - name: Generate feedback report
+        working-directory: python
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: python main.py feedback-report
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feedback-report-csv
+          path: python/output/feedback_report.csv
+          if-no-files-found: warn
+          retention-days: 30

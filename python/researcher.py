@@ -161,18 +161,18 @@ async def run_research_session() -> dict:
 
 
 async def _start_research_with_retry(client, notebook_id: str, prompt: str) -> dict:
-    """Start research with retry. Falls back to 'fast' mode if 'deep' is rate-limited."""
+    """Start research with retry. Falls back to 'fast' mode on rate limit OR transient timeout."""
     modes_to_try = [config.RESEARCH_MODE]
     if config.RESEARCH_MODE == "deep":
         modes_to_try.append("fast")  # fallback
 
+    last_exc = None
     for mode in modes_to_try:
         if mode != config.RESEARCH_MODE:
-            logger.warning("Deep research rate-limited — falling back to fast research.")
+            logger.warning("Falling back to mode='%s' (previous mode failed).", mode)
 
         delays = [30, 60]  # retry delays within the same mode
         last_exc = None
-        rate_limited = False
 
         for attempt, delay in enumerate([0] + delays, start=1):
             if delay:
@@ -190,18 +190,15 @@ async def _start_research_with_retry(client, notebook_id: str, prompt: str) -> d
             except RateLimitError as exc:
                 logger.warning("Rate limit on mode='%s', attempt %d: %s", mode, attempt, exc)
                 last_exc = exc
-                rate_limited = True
-                break  # no point retrying same mode — switch mode instead
+                break  # switch mode immediately
             except (RPCTimeoutError, NetworkError) as exc:
-                logger.warning("Transient error attempt %d: %s", attempt, exc)
+                logger.warning("Transient error on mode='%s', attempt %d: %s", mode, attempt, exc)
                 last_exc = exc
-            except Exception as exc:
+            except Exception:
                 raise
+        # Whatever the cause (rate-limit or exhausted timeouts), try the next mode.
 
-        if not rate_limited and last_exc:
-            raise last_exc  # transient errors exhausted
-
-    raise last_exc  # all modes rate-limited
+    raise last_exc  # all modes failed
 
 
 async def _wait_for_research(client, notebook_id: str) -> dict:

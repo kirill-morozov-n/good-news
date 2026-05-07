@@ -37,17 +37,19 @@ CAPTION_LIMIT = 1024
 # ---------------------------------------------------------------------------
 
 def _load_posted_data() -> dict:
-    """Load {urls: [...], titles: [...], last_post_time: "ISO"} from disk."""
+    """Load {urls, titles, last_post_time, message_log} from disk."""
+    default = {"urls": [], "titles": [], "message_log": []}
     if not POSTED_URLS_FILE.exists():
-        return {"urls": [], "titles": []}
+        return default
     try:
         raw = json.loads(POSTED_URLS_FILE.read_text(encoding="utf-8"))
         # Backwards compat: old format was a plain list of URLs
         if isinstance(raw, list):
-            return {"urls": raw, "titles": []}
+            return {"urls": raw, "titles": [], "message_log": []}
+        raw.setdefault("message_log", [])
         return raw
     except Exception:
-        return {"urls": [], "titles": []}
+        return default
 
 
 def load_posted_urls() -> set:
@@ -65,7 +67,14 @@ def load_posted_titles() -> set:
     return {_normalize_title(t) for t in _load_posted_data()["titles"] if t}
 
 
-def save_posted(url: str, title: str = "", update_time: bool = False) -> None:
+def save_posted(
+    url: str,
+    title: str = "",
+    update_time: bool = False,
+    message_id: int | None = None,
+    hashtags: str = "",
+    feed_url: str = "",
+) -> None:
     POSTED_URLS_FILE.parent.mkdir(parents=True, exist_ok=True)
     data = _load_posted_data()
     if url not in data["urls"]:
@@ -76,9 +85,19 @@ def save_posted(url: str, title: str = "", update_time: bool = False) -> None:
             data["titles"].append(title)
     if update_time:
         data["last_post_time"] = datetime.utcnow().isoformat()
-    # keep last 3000 to avoid unbounded growth
+    if message_id is not None:
+        data.setdefault("message_log", []).append({
+            "mid": int(message_id),
+            "ts": datetime.utcnow().isoformat() + "Z",
+            "title": title,
+            "hashtags": hashtags,
+            "feed_url": feed_url,
+            "article_url": url,
+        })
+    # keep last 3000 urls/titles, last 500 message_log entries
     data["urls"] = data["urls"][-3000:]
     data["titles"] = data["titles"][-3000:]
+    data["message_log"] = data.get("message_log", [])[-500:]
     POSTED_URLS_FILE.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -549,7 +568,8 @@ def build_caption(text: str, url: str, hashtags: str) -> str:
 # Telegram sender
 # ---------------------------------------------------------------------------
 
-async def send_photo(image_data: bytes, caption: str) -> bool:
+async def send_photo(image_data: bytes, caption: str) -> int | None:
+    """Post an image with caption. Returns the Telegram message_id on success, else None."""
     url = TG_API.format(token=config.TELEGRAM_BOT_TOKEN, method="sendPhoto")
     try:
         async with httpx.AsyncClient(timeout=60) as client:
@@ -558,13 +578,15 @@ async def send_photo(image_data: bytes, caption: str) -> bool:
                 data={"chat_id": config.TELEGRAM_CHANNEL_ID, "caption": caption, "parse_mode": "HTML"},
                 files={"photo": ("photo.jpg", image_data, "image/jpeg")},
             )
-        if resp.status_code == 200 and resp.json().get("ok"):
-            return True
+        if resp.status_code == 200:
+            body = resp.json()
+            if body.get("ok"):
+                return int(body["result"]["message_id"])
         logger.error("Telegram error: %s", resp.text)
-        return False
+        return None
     except Exception as e:
         logger.error("Telegram exception: %s", e)
-        return False
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -641,13 +663,21 @@ async def _post_one(posted_urls: set, posted_titles: set, recent_tags: list) -> 
                 continue
             text = await add_wiki_links(text)
             caption = build_caption(text, article["url"], article["hashtags"])
-            ok = await send_photo(article["image_data"], caption)
+            mid = await send_photo(article["image_data"], caption)
+            ok = mid is not None
             # Always mark as seen to avoid infinite retry on bad images
             posted_urls.add(article["url"])
             posted_titles.add(_normalize_title(article["title"]))
-            save_posted(article["url"], article["title"], update_time=ok)
+            save_posted(
+                article["url"],
+                article["title"],
+                update_time=ok,
+                message_id=mid,
+                hashtags=feed.get("hashtags", ""),
+                feed_url=feed.get("url", ""),
+            )
             if ok:
-                logger.info("Posted: %s", article["title"])
+                logger.info("Posted: %s (mid=%s)", article["title"], mid)
                 recent_tags.append(_leading_tag(feed["hashtags"]))
                 return True
             logger.warning("Skipped (Telegram rejected): %s", article["title"])

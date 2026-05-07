@@ -12,6 +12,8 @@ Usage:
   python main.py system-design  Post one system-design topic and exit
   python main.py start          Run RSS bot + daily research together
   python main.py login          Authenticate with Google (first-time setup)
+  python main.py poll-reactions Pull new 👍/👎 counts from Telegram and persist
+  python main.py feedback-report Generate CSV + admin-chat summary of reactions
 """
 
 import asyncio
@@ -114,6 +116,16 @@ def cmd_login():
     subprocess.run([cli, "login"], check=True)
 
 
+def cmd_poll_reactions():
+    from feedback import cmd_poll_reactions as _do
+    asyncio.run(_do())
+
+
+def cmd_feedback_report():
+    from feedback import cmd_feedback_report as _do
+    asyncio.run(_do())
+
+
 COMMANDS = {
     "run": cmd_run,
     "schedule": cmd_schedule,
@@ -124,6 +136,8 @@ COMMANDS = {
     "meditation": cmd_meditation,
     "system-design": cmd_system_design,
     "start": cmd_start,
+    "poll-reactions": cmd_poll_reactions,
+    "feedback-report": cmd_feedback_report,
 }
 
 
