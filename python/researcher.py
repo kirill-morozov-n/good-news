@@ -5,6 +5,7 @@ Handles: research -> source import -> audio/video generation -> download.
 
 import asyncio
 import logging
+import random
 from datetime import datetime
 from pathlib import Path
 
@@ -251,9 +252,14 @@ async def _generate_audio_with_retry(client, notebook_id: str):
 
 
 async def _generate_audio(client, notebook_id: str):
+    hero = random.choice(config.HEROES_POOL)
+    logger.info("Selected hero for intro: %s", hero["name"])
+    instructions = config.AUDIO_INSTRUCTIONS.format(
+        hero=hero["name"], quote=hero["quote"]
+    )
     return await client.artifacts.generate_audio(
         notebook_id,
-        instructions=config.AUDIO_INSTRUCTIONS,
+        instructions=instructions,
         audio_format=_get_audio_format(config.AUDIO_FORMAT),
         audio_length=_get_audio_length(config.AUDIO_LENGTH),
         language=config.AUDIO_LANGUAGE,
