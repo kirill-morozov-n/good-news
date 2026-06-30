@@ -164,7 +164,7 @@ VIDEO_STYLE = "AUTO_SELECT"
 VIDEO_LANGUAGE = "ru"
 
 # --- OpenAI Settings ---
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "REDACTED_OPENAI_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 # --- Meditation Settings ---
 MEDITATION_TTS_VOICE = "ru-RU-SvetlanaNeural"
