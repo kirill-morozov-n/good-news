@@ -187,7 +187,9 @@ async def _start_research_with_retry(client, notebook_id: str, prompt: str) -> d
                     mode=mode,
                 )
                 logger.info("Research started with mode='%s'.", mode)
-                return result or {}
+                # notebooklm-py 0.8.0 returns a ResearchStart dataclass; the dict
+                # bridge was removed. to_public_dict() gives the legacy shape.
+                return result.to_public_dict() if result else {}
             except RateLimitError as exc:
                 logger.warning("Rate limit on mode='%s', attempt %d: %s", mode, attempt, exc)
                 last_exc = exc
@@ -206,7 +208,8 @@ async def _wait_for_research(client, notebook_id: str) -> dict:
     """Poll research.poll() until status == 'completed'."""
     deadline = asyncio.get_event_loop().time() + config.RESEARCH_TIMEOUT
     while asyncio.get_event_loop().time() < deadline:
-        result = await client.research.poll(notebook_id)
+        # 0.8.0 returns a ResearchTask dataclass; convert to the legacy dict shape.
+        result = (await client.research.poll(notebook_id)).to_public_dict()
         status = result.get("status", "")
         logger.debug("Research poll: status=%s", status)
         if status == "completed":
