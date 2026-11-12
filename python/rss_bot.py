@@ -14,6 +14,7 @@ import random
 import re
 from datetime import datetime, time as dtime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -695,7 +696,7 @@ def _parse_time(t: str) -> dtime:
 
 def _quiet_sleep_seconds() -> float | None:
     """Return seconds to sleep if we're in quiet hours, else None."""
-    now = datetime.now()
+    now = datetime.now(ZoneInfo(config.TIMEZONE))
     quiet_start = _parse_time(config.QUIET_START)
     quiet_end   = _parse_time(config.QUIET_END)
 
@@ -712,7 +713,7 @@ def _quiet_sleep_seconds() -> float | None:
         return None
 
     # Sleep until quiet_end today or tomorrow
-    resume = datetime.combine(now.date(), quiet_end)
+    resume = datetime.combine(now.date(), quiet_end, tzinfo=now.tzinfo)
     if resume <= now:
         resume += timedelta(days=1)
     return (resume - now).total_seconds()
@@ -720,6 +721,15 @@ def _quiet_sleep_seconds() -> float | None:
 
 async def post_once() -> bool:
     """Post a single news item and exit. For use with GitHub Actions cron."""
+    # Triggers can arrive late (GitHub cron has been running hours behind
+    # since Aug 2026), so a run can land at night. Never post in quiet hours.
+    if _quiet_sleep_seconds() is not None:
+        logger.info(
+            "news-once: quiet hours (%s–%s %s). Skipping.",
+            config.QUIET_START, config.QUIET_END, config.TIMEZONE,
+        )
+        return False
+
     # Enforce minimum interval between posts (GitHub Actions cron is imprecise)
     elapsed = _seconds_since_last_post()
     if elapsed is not None and elapsed < POST_INTERVAL:
